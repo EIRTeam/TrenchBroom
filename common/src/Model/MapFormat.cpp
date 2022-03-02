@@ -34,6 +34,8 @@ MapFormat formatFromName(const std::string& formatName) {
     return MapFormat::Quake2_Valve;
   } else if (formatName == "Valve") {
     return MapFormat::Valve;
+  } else if (formatName == "EIRTeam") {
+    return MapFormat::EIRTeam;
   } else if (formatName == "Hexen2") {
     return MapFormat::Hexen2;
   } else if (formatName == "Daikatana") {
@@ -59,6 +61,8 @@ std::string formatName(const MapFormat format) {
       return "Quake2 (Valve)";
     case MapFormat::Valve:
       return "Valve";
+    case MapFormat::EIRTeam:
+      return "EIRTeam";
     case MapFormat::Hexen2:
       return "Hexen2";
     case MapFormat::Daikatana:
@@ -81,6 +85,8 @@ std::vector<MapFormat> compatibleFormats(const MapFormat format) {
       return {MapFormat::Standard, MapFormat::Valve};
     case MapFormat::Valve:
       return {MapFormat::Valve, MapFormat::Standard};
+    case MapFormat::EIRTeam:
+      return {MapFormat::EIRTeam, MapFormat::Standard};
     case MapFormat::Quake2:
       return {MapFormat::Quake2, MapFormat::Quake2_Valve};
     case MapFormat::Quake2_Valve:
@@ -104,6 +110,7 @@ std::vector<MapFormat> compatibleFormats(const MapFormat format) {
 bool isParallelTexCoordSystem(const MapFormat format) {
   switch (format) {
     case MapFormat::Valve:
+    case MapFormat::EIRTeam:
     case MapFormat::Quake2_Valve:
     case MapFormat::Quake3_Valve:
       return true;

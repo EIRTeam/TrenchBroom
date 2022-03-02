@@ -45,6 +45,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include "Model/Brush.h"
 
 namespace TrenchBroom {
 namespace IO {
@@ -203,11 +204,42 @@ public:
   explicit ValveFileSerializer(std::ostream& stream)
     : QuakeFileSerializer(stream) {}
 
-private:
+protected:
   void doWriteBrushFace(std::ostream& stream, const Model::BrushFace& face) const override {
     writeFacePoints(stream, face);
     writeValveTextureInfo(stream, face);
     fmt::format_to(std::ostreambuf_iterator<char>(stream), "\n");
+  }
+};
+
+class EIRTeamFileSerializer : public ValveFileSerializer {
+  Model::Brush m_brush;
+public:
+  explicit EIRTeamFileSerializer(std::ostream& stream)
+    : ValveFileSerializer(stream) {}
+
+private:
+  /**
+   * Threadsafe
+   */
+  MapFileSerializer::PrecomputedString writeBrushFaces(
+  const Model::Brush& brush) const override {
+    std::stringstream stream;
+    for (const Model::BrushFace& face : brush.faces()) {
+      doWriteBrushFace(stream, face);
+    }
+    std::map<vm::vec3, Color> vertexColors = brush.vertexColors();
+    for (const auto& [position, color] : vertexColors) {
+      writeEIRTeamVertexColors(stream, position, color);
+    }
+    return PrecomputedString{stream.str(), brush.faces().size() + vertexColors.size()};
+  }
+
+  void writeEIRTeamVertexColors(std::ostream& stream, const vm::vec3& position, const Color& color) const {
+    fmt::format_to(
+      std::ostreambuf_iterator<char>(stream), "[ {} {} {} ] [ {} {} {} {} ]\n",
+      position.x(), position.y(), position.z(), color.r(), color.g(), color.b(), color.a()
+    );
   }
 };
 
@@ -226,6 +258,8 @@ std::unique_ptr<NodeSerializer> MapFileSerializer::create(
       return std::make_unique<Quake2ValveFileSerializer>(stream);
     case Model::MapFormat::Daikatana:
       return std::make_unique<DaikatanaFileSerializer>(stream);
+    case Model::MapFormat::EIRTeam:
+      return std::make_unique<EIRTeamFileSerializer>(stream);
     case Model::MapFormat::Valve:
       return std::make_unique<ValveFileSerializer>(stream);
     case Model::MapFormat::Hexen2:

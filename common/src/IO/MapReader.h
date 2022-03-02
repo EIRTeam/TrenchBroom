@@ -82,6 +82,7 @@ public: // only public so that helper methods can see these declarations
     size_t startLine;
     size_t lineCount;
     std::optional<size_t> parentIndex;
+    std::map<vm::vec3, Color> vertexColors; 
   };
 
   struct PatchInfo {
@@ -151,6 +152,7 @@ protected: // implement MapParser interface
     size_t line, Model::MapFormat targetMapFormat, const vm::vec3& point1, const vm::vec3& point2,
     const vm::vec3& point3, const Model::BrushFaceAttributes& attribs, const vm::vec3& texAxisX,
     const vm::vec3& texAxisY, ParserStatus& status) override;
+  void onEIRTeamVertexColor(const vm::vec3& position, const Color& color) override;
   void onPatch(
     size_t startLine, size_t lineCount, Model::MapFormat targetMapFormat, size_t rowCount,
     size_t columnCount, std::vector<vm::vec<FloatType, 5>> controlPoints, std::string textureName,

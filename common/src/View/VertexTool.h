@@ -44,6 +44,7 @@ class BrushVertexCommandBase;
 class Grid;
 class Lasso;
 class Selection;
+class VertexToolPage;
 
 class VertexTool : public VertexToolBase<vm::vec3> {
 private:
@@ -55,6 +56,7 @@ private:
   };
 
   Mode m_mode;
+  VertexToolPage* m_toolPage;
 
   std::unique_ptr<VertexHandleManager> m_vertexHandles;
   std::unique_ptr<EdgeHandleManager> m_edgeHandles;
@@ -69,6 +71,7 @@ public:
   std::vector<Model::BrushNode*> findIncidentBrushes(const vm::vec3& handle) const;
   std::vector<Model::BrushNode*> findIncidentBrushes(const vm::segment3& handle) const;
   std::vector<Model::BrushNode*> findIncidentBrushes(const vm::polygon3& handle) const;
+  void colorVertices(Color color);
 
 private:
   using VertexToolBase::findIncidentBrushes;
@@ -76,7 +79,7 @@ private:
 public:
   void pick(const vm::ray3& pickRay, const Renderer::Camera& camera, Model::PickResult& pickResult)
     const override;
-
+  const Color pickColor() const;
 public: // Handle selection
   bool deselectAll() override;
 
@@ -118,6 +121,8 @@ private:
 
 private: // General helper methods
   void resetModeAfterDeselection();
+
+  QWidget* doCreatePage(QWidget* parent) override;
 };
 } // namespace View
 } // namespace TrenchBroom

@@ -45,19 +45,19 @@ private:
   size_t m_line;
   std::ostream& m_stream;
 
-  struct PrecomputedString {
-    std::string string;
-    size_t lineCount;
-  };
-  std::unordered_map<const Model::Node*, PrecomputedString> m_nodeToPrecomputedString;
 
 public:
   static std::unique_ptr<NodeSerializer> create(Model::MapFormat format, std::ostream& stream);
 
 protected:
+  struct PrecomputedString {
+    std::string string;
+    size_t lineCount;
+  };
   explicit MapFileSerializer(std::ostream& stream);
 
 private:
+  std::unordered_map<const Model::Node*, PrecomputedString> m_nodeToPrecomputedString;
   void doBeginFile(const std::vector<const Model::Node*>& rootNodes) override;
   void doEndFile() override;
 
@@ -73,9 +73,11 @@ private:
   void setFilePosition(const Model::Node* node);
   size_t startLine();
 
-private: // threadsafe
+protected:
   virtual void doWriteBrushFace(std::ostream& stream, const Model::BrushFace& face) const = 0;
-  PrecomputedString writeBrushFaces(const Model::Brush& brush) const;
+
+private: // threadsafe
+  virtual PrecomputedString writeBrushFaces(const Model::Brush& brush) const;
   PrecomputedString writePatch(const Model::BezierPatch& patch) const;
 };
 } // namespace IO

@@ -30,6 +30,7 @@
 #include <vector>
 
 namespace TrenchBroom {
+class Color;
 namespace Model {
 class EntityProperty;
 class BrushFaceAttributes;
@@ -55,6 +56,7 @@ protected: // subclassing interface for users of the parser
     size_t line, Model::MapFormat targetMapFormat, const vm::vec3& point1, const vm::vec3& point2,
     const vm::vec3& point3, const Model::BrushFaceAttributes& attribs, const vm::vec3& texAxisX,
     const vm::vec3& texAxisY, ParserStatus& status) = 0;
+  virtual void onEIRTeamVertexColor(const vm::vec3& position, const Color& color) = 0;
   virtual void onPatch(
     size_t startLine, size_t lineCount, Model::MapFormat targetMapFormat, size_t rowCount,
     size_t columnCount, std::vector<vm::vec<FloatType, 5>> controlPoints, std::string textureName,

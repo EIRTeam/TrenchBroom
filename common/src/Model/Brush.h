@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Color.h"
 
 namespace TrenchBroom {
 namespace Model {
@@ -55,6 +56,7 @@ public:
 private:
   std::vector<BrushFace> m_faces;
   std::unique_ptr<BrushGeometry> m_geometry;
+  std::map<vm::vec3, Color> m_vertexColors;
 
 public:
   Brush();
@@ -70,8 +72,13 @@ public:
   static kdl::result<Brush, BrushError> create(
     const vm::bbox3& worldBounds, std::vector<BrushFace> faces);
 
+  static kdl::result<Brush, BrushError> create(
+    const vm::bbox3& worldBounds, std::vector<BrushFace> faces,
+    std::map<vm::vec3, Color> vertexColors);
+
 private:
   Brush(std::vector<BrushFace> faces);
+  Brush(std::vector<BrushFace> faces, std::map<vm::vec3, Color> vertexColors);
 
   kdl::result<void, BrushError> updateGeometryFromFaces(const vm::bbox3& worldBounds);
 
@@ -88,8 +95,11 @@ public: // face management:
     const std::vector<vm::polygon3>& candidates,
     FloatType epsilon = static_cast<FloatType>(0.0)) const;
 
+  const Color findVertexColor(const vm::vec3& position) const;
+
   const BrushFace& face(size_t index) const;
   BrushFace& face(size_t index);
+  const std::map<vm::vec3, Color>& vertexColors() const;
   size_t faceCount() const;
   const std::vector<BrushFace>& faces() const;
   std::vector<BrushFace>& faces();
@@ -148,6 +158,7 @@ public:
     const std::vector<vm::polygon3>& positions) const;
 
   bool hasVertex(const vm::vec3& position, FloatType epsilon = static_cast<FloatType>(0.0)) const;
+  bool hasVertexColorAt(const vm::vec3& position) const;
   bool hasEdge(const vm::segment3& edge, FloatType epsilon = static_cast<FloatType>(0.0)) const;
   bool hasFace(const vm::polygon3& face, FloatType epsilon = static_cast<FloatType>(0.0)) const;
 
@@ -192,6 +203,7 @@ public:
   kdl::result<void, BrushError> moveFaces(
     const vm::bbox3& worldBounds, const std::vector<vm::polygon3>& facePositions,
     const vm::vec3& delta, bool uvLock = false);
+  void colorVertices(const std::vector<vm::vec3>& vertexPositions, Color& color);
 
 private:
   struct CanMoveVerticesResult {
@@ -250,6 +262,8 @@ private:
   kdl::result<void, BrushError> updateFacesFromGeometry(
     const vm::bbox3& worldBounds, const PolyhedronMatcher<BrushGeometry>& matcher,
     const BrushGeometry& newGeometry, bool uvLock = false);
+
+  void remapColors(std::map<vm::vec3, vm::vec3> vertexMapping);
 
 public:
   // CSG operations

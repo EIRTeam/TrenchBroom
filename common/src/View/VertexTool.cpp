@@ -35,6 +35,7 @@
 #include <cassert>
 #include <tuple>
 #include <vector>
+#include <View/VertexToolPage.h>
 
 namespace TrenchBroom {
 namespace View {
@@ -66,6 +67,22 @@ void VertexTool::pick(
   m_vertexHandles->pick(pickRay, camera, pickResult);
   m_edgeHandles->pickGridHandle(pickRay, camera, grid, pickResult);
   m_faceHandles->pickGridHandle(pickRay, camera, grid, pickResult);
+}
+
+const Color VertexTool::pickColor() const {
+  Color color = Color(1.0f, 1.0f, 1.0f, 1.0f);
+  const std::vector<Model::BrushNode*>& brushes = selectedBrushes();
+  std::vector<vm::vec3> handles = m_vertexHandles->selectedHandles();
+  if (handles.size() > 0) {
+    for (const auto& brushNode : brushes) {
+      const Model::Brush brush = brushNode->brush();
+      if (brush.hasVertexColorAt(handles[0])) {
+        color = brush.findVertexColor(handles[0]);
+        break;
+      }
+    }
+  }
+  return color;
 }
 
 bool VertexTool::deselectAll() {
@@ -125,6 +142,12 @@ bool VertexTool::startMove(const std::vector<Model::Hit>& hits) {
   } else {
     return true;
   }
+}
+
+void VertexTool::colorVertices(Color color) {
+    auto handles = m_vertexHandles->selectedHandles();
+    auto document = kdl::mem_lock(m_document);
+    document->colorVertices(std::move(handles), color);
 }
 
 VertexTool::MoveResult VertexTool::move(const vm::vec3& delta) {
@@ -287,5 +310,11 @@ void VertexTool::resetModeAfterDeselection() {
     m_mode = Mode::Move;
   }
 }
+
+QWidget* VertexTool::doCreatePage(QWidget* parent) {
+  m_toolPage = new VertexToolPage(m_document, *this, parent);
+  return m_toolPage;
+}
+
 } // namespace View
 } // namespace TrenchBroom

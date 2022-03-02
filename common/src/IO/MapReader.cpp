@@ -98,7 +98,7 @@ void MapReader::onEndEntity(
 }
 
 void MapReader::onBeginBrush(const size_t /* line */, ParserStatus& /* status */) {
-  m_objectInfos.push_back(BrushInfo{{}, 0, 0, m_currentEntityInfo});
+  m_objectInfos.push_back(BrushInfo{{}, 0, 0, m_currentEntityInfo, {}});
 }
 
 void MapReader::onEndBrush(
@@ -122,6 +122,12 @@ void MapReader::onStandardBrushFace(
     .handle_errors([&](const Model::BrushError e) {
       status.error(line, kdl::str_to_string("Skipping face: ", e));
     });
+}
+
+void MapReader::onEIRTeamVertexColor(const vm::vec3& position, const Color& color) {
+    assert(std::holds_alternative<BrushInfo>(m_objectInfos.back()));
+    BrushInfo& brush = std::get<BrushInfo>(m_objectInfos.back());
+    brush.vertexColors.insert_or_assign(position, color);
 }
 
 void MapReader::onValveBrushFace(
@@ -465,7 +471,7 @@ static CreateNodeResult createNodeFromEntityInfo(
  */
 static CreateNodeResult createBrushNode(
   MapReader::BrushInfo brushInfo, const vm::bbox3& worldBounds) {
-  return Model::Brush::create(worldBounds, std::move(brushInfo.faces))
+  return Model::Brush::create(worldBounds, std::move(brushInfo.faces), std::move(brushInfo.vertexColors))
     .and_then([&](Model::Brush&& brush) {
       auto brushNode = std::make_unique<Model::BrushNode>(std::move(brush));
       brushNode->setFilePosition(brushInfo.startLine, brushInfo.lineCount);

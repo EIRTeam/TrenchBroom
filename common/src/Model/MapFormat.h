@@ -47,6 +47,10 @@ enum class MapFormat
    */
   Valve,
   /**
+   * EIRTeam Valve 220-based map format.
+   */
+  EIRTeam,
+  /**
    * Hexen 2 map format.
    */
   Hexen2,

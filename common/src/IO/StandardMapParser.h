@@ -126,6 +126,7 @@ private:
   std::tuple<vm::vec3, vm::vec3, vm::vec3> parseFacePoints(ParserStatus& status);
   std::string parseTextureName(ParserStatus& status);
   std::tuple<vm::vec3, float, vm::vec3, float> parseValveTextureAxes(ParserStatus& status);
+  void parseEIRTeamVertexColors();
   std::tuple<vm::vec3, vm::vec3> parsePrimitiveTextureAxes(ParserStatus& status);
 
   template <size_t S = 3, typename T = FloatType>

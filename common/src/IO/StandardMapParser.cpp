@@ -322,6 +322,9 @@ void StandardMapParser::parseBrush(
         }
         parseFace(status, primitive);
         break;
+      case QuakeMapToken::OBracket:
+        parseEIRTeamVertexColors();
+        break;
       case QuakeMapToken::CBrace:
         // TODO 2427: handle brush primitives
         if (!primitive) {
@@ -334,7 +337,7 @@ void StandardMapParser::parseBrush(
         }
         return;
       default: {
-        expect(QuakeMapToken::OParenthesis | QuakeMapToken::CParenthesis, token);
+        expect(QuakeMapToken::OParenthesis | QuakeMapToken::CParenthesis | QuakeMapToken::OBracket | QuakeMapToken::CBracket, token);
       }
     }
 
@@ -362,6 +365,7 @@ void StandardMapParser::parseFace(ParserStatus& status, const bool primitive) {
       parseDaikatanaFace(status);
       break;
     case Model::MapFormat::Valve:
+    case Model::MapFormat::EIRTeam:
       parseValveFace(status);
       break;
     case Model::MapFormat::Quake3:
@@ -512,7 +516,6 @@ void StandardMapParser::parseValveFace(ParserStatus& status) {
   attribs.setRotation(parseFloat());
   attribs.setXScale(parseFloat());
   attribs.setYScale(parseFloat());
-
   onValveBrushFace(line, m_targetMapFormat, p1, p2, p3, attribs, texX, texY, status);
 }
 
@@ -637,6 +640,12 @@ std::tuple<vm::vec3, float, vm::vec3, float> StandardMapParser::parseValveTextur
 
   return std::make_tuple(texS, xOffset, texT, yOffset);
 }
+
+void StandardMapParser::parseEIRTeamVertexColors() {
+    vm::vec3 position = parseFloatVector<3, double>(QuakeMapToken::OBracket, QuakeMapToken::CBracket);
+    Color color = parseFloatVector<4, float>(QuakeMapToken::OBracket, QuakeMapToken::CBracket);
+    onEIRTeamVertexColor(position, color);
+  }
 
 std::tuple<vm::vec3, vm::vec3> StandardMapParser::parsePrimitiveTextureAxes(
   ParserStatus& /* status */) {

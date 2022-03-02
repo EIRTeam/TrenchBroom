@@ -165,7 +165,7 @@ std::unique_ptr<WorldNode> GameImpl::doNewMap(
     auto worldEntity = Model::Entity{};
     if (
       format == MapFormat::Valve || format == MapFormat::Quake2_Valve ||
-      format == MapFormat::Quake3_Valve) {
+      format == MapFormat::Quake3_Valve || format == MapFormat::EIRTeam) {
       worldEntity.addOrUpdateProperty(
         entityPropertyConfig(), EntityPropertyKeys::ValveVersion, "220");
     }

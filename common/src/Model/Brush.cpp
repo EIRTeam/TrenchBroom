@@ -64,7 +64,8 @@ Brush::Brush(const Brush& other)
   : m_faces(other.m_faces)
   , m_geometry(
       other.m_geometry ? std::make_unique<BrushGeometry>(*other.m_geometry, CopyCallback())
-                       : nullptr) {
+                       : nullptr)
+  , m_vertexColors(other.m_vertexColors) {
   if (m_geometry) {
     for (BrushFaceGeometry* faceGeometry : m_geometry->faces()) {
       if (const auto faceIndex = faceGeometry->payload()) {
@@ -77,7 +78,8 @@ Brush::Brush(const Brush& other)
 
 Brush::Brush(Brush&& other) noexcept
   : m_faces(std::move(other.m_faces))
-  , m_geometry(std::move(other.m_geometry)) {}
+  , m_geometry(std::move(other.m_geometry))
+  , m_vertexColors(std::move(other.m_vertexColors)) {}
 
 Brush& Brush::operator=(Brush other) noexcept {
   using std::swap;
@@ -89,6 +91,7 @@ void swap(Brush& lhs, Brush& rhs) noexcept {
   using std::swap;
   swap(lhs.m_faces, rhs.m_faces);
   swap(lhs.m_geometry, rhs.m_geometry);
+  swap(lhs.m_vertexColors, rhs.m_vertexColors);
 }
 
 Brush::~Brush() = default;
@@ -96,9 +99,22 @@ Brush::~Brush() = default;
 Brush::Brush(std::vector<BrushFace> faces)
   : m_faces(std::move(faces)) {}
 
+Brush::Brush(std::vector<BrushFace> faces, std::map<vm::vec3, Color> vertexColors)
+  : m_faces(std::move(faces))
+  , m_vertexColors(std::move(vertexColors)) {}
+
 kdl::result<Brush, BrushError> Brush::create(
   const vm::bbox3& worldBounds, std::vector<BrushFace> faces) {
   Brush brush(std::move(faces));
+  return brush.updateGeometryFromFaces(worldBounds).and_then([&]() {
+    return std::move(brush);
+  });
+}
+
+kdl::result<Brush, BrushError> Brush::create(
+  const vm::bbox3& worldBounds, std::vector<BrushFace> faces,
+  std::map<vm::vec3, Color> vertexColors) {
+  Brush brush(std::move(faces), std::move(vertexColors));
   return brush.updateGeometryFromFaces(worldBounds).and_then([&]() {
     return std::move(brush);
   });
@@ -188,9 +204,23 @@ std::optional<size_t> Brush::findFace(
   return std::nullopt;
 }
 
+const Color Brush::findVertexColor(const vm::vec3& position) const {
+  auto it = m_vertexColors.find(position);
+
+  if (it != m_vertexColors.end()) {
+    return it->second;
+  }
+  // Fallback color is full white
+  return Color(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
 const BrushFace& Brush::face(const size_t index) const {
   assert(index < faceCount());
   return m_faces[index];
+}
+
+const std::map<vm::vec3, Color>& Brush::vertexColors() const {
+  return m_vertexColors;
 }
 
 BrushFace& Brush::face(const size_t index) {
@@ -357,6 +387,10 @@ bool Brush::hasVertex(const vm::vec3& position, const FloatType epsilon) const {
   return m_geometry->findVertexByPosition(position, epsilon) != nullptr;
 }
 
+bool Brush::hasVertexColorAt(const vm::vec3& position) const {
+  return m_vertexColors.find(position) != m_vertexColors.end();
+}
+
 vm::vec3 Brush::findClosestVertexPosition(const vm::vec3& position) const {
   ensure(m_geometry != nullptr, "geometry is null");
   return m_geometry->findClosestVertex(position)->position();
@@ -476,6 +510,15 @@ kdl::result<void, BrushError> Brush::moveVertices(
   return doMoveVertices(worldBounds, vertexPositions, delta, uvLock);
 }
 
+void Brush::colorVertices(const std::vector<vm::vec3>& vertexPositions, Color& color) {
+  for (const auto& vertex : m_geometry->vertices()) {
+    const auto& position = vertex->position();
+    if (kdl::vec_contains(vertexPositions, position)) {
+      m_vertexColors.insert_or_assign(position, color);
+    }
+  }
+}
+
 bool Brush::canAddVertex(const vm::bbox3& worldBounds, const vm::vec3& position) const {
   ensure(m_geometry != nullptr, "geometry is null");
   if (!worldBounds.contains(position)) {
@@ -563,6 +606,7 @@ kdl::result<void, BrushError> Brush::snapVertices(
   }
 
   const PolyhedronMatcher<BrushGeometry> matcher(*m_geometry, newGeometry, vertexMapping);
+  remapColors(vertexMapping);
   return updateFacesFromGeometry(worldBounds, matcher, newGeometry, uvLock);
 }
 
@@ -809,6 +853,8 @@ kdl::result<void, BrushError> Brush::doMoveVertices(
     }
   }
 
+  remapColors(vertexMapping);
+
   const PolyhedronMatcher<BrushGeometry> matcher(*m_geometry, newGeometry, vertexMapping);
   return updateFacesFromGeometry(worldBounds, matcher, newGeometry, uvLock);
 }
@@ -932,6 +978,21 @@ kdl::result<void, BrushError> Brush::updateFacesFromGeometry(
 
   m_faces = std::move(newFaces);
   return updateGeometryFromFaces(worldBounds);
+}
+
+void Brush::remapColors(std::map<vm::vec3, vm::vec3> vertexMapping) {
+  std::map<vm::vec3, Color> newVertexColorMapping;
+  for (const auto& [position, color] : m_vertexColors) {
+    if (vertexMapping.find(position) != vertexMapping.end()) {
+      // We have this vertex in the map, so we should remap it now
+      newVertexColorMapping.insert(std::make_pair(vertexMapping[position], color));
+    } else {
+      // we don't need to remap it
+      newVertexColorMapping.insert(std::make_pair(position, color));
+    }
+  }
+
+  m_vertexColors = newVertexColorMapping;
 }
 
 std::vector<kdl::result<Brush, BrushError>> Brush::subtract(

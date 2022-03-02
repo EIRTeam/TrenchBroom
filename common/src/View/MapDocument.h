@@ -577,6 +577,7 @@ public: // modifying vertices, declared in MapFacade interface
 
   MoveVerticesResult moveVertices(
     std::vector<vm::vec3> vertexPositions, const vm::vec3& delta) override;
+  bool colorVertices(std::vector<vm::vec3> vertexPositions, Color color);
   bool moveEdges(std::vector<vm::segment3> edgePositions, const vm::vec3& delta) override;
   bool moveFaces(std::vector<vm::polygon3> facePositions, const vm::vec3& delta) override;
 

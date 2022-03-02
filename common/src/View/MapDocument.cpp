@@ -3126,6 +3126,64 @@ bool MapDocument::snapVertices(const FloatType snapTo) {
   return true;
 }
 
+bool MapDocument::colorVertices(
+  std::vector<vm::vec3> vertexPositions, Color color) {
+  auto newVertexPositions = std::vector<vm::vec3>{};
+
+  auto newNodes = applyToNodeContents(
+    m_selectedNodes.nodes(),
+    kdl::overload(
+      [](Model::Layer&) {
+        return true;
+      },
+      [](Model::Group&) {
+        return true;
+      },
+      [](Model::Entity&) {
+        return true;
+      },
+      [&](Model::Brush& brush) {
+        const auto verticesToColor = kdl::vec_filter(vertexPositions, [&](const auto& vertex) {
+          return brush.hasVertex(vertex);
+        });
+        if (verticesToColor.empty()) {
+          return true;
+        }
+        brush.colorVertices(verticesToColor, color);
+        auto newPositions = brush.findClosestVertexPositions(verticesToColor);
+        newVertexPositions =
+              kdl::vec_concat(std::move(newVertexPositions), std::move(newPositions));
+        return true;
+      },
+      [](Model::BezierPatch&) {
+        return true;
+      }));
+
+  // Oh man abusing BrushVertexCommand's internal state copying is fun, makes
+  // my life a whole lot easier
+  if (newNodes) {
+    kdl::vec_sort_and_remove_duplicates(newVertexPositions);
+
+    const auto commandName =
+      kdl::str_plural(vertexPositions.size(), "Color vertex", "Color vertices");
+    auto linkedGroupsToUpdate =
+      findContainingLinkedGroupsToUpdate(*m_world, kdl::vec_transform(*newNodes, [](const auto& p) {
+        return p.first;
+      }));
+    const auto result = executeAndStore(std::make_unique<BrushVertexCommand>(
+      commandName, std::move(*newNodes), std::move(vertexPositions), std::move(newVertexPositions),
+      std::move(linkedGroupsToUpdate)));
+
+    const auto* moveVerticesResult = dynamic_cast<BrushVertexCommandResult*>(result.get());
+    ensure(
+      moveVerticesResult != nullptr, "command processor returned unexpected command result type");
+
+    return true;
+  }
+
+  return false;
+}
+
 MapDocument::MoveVerticesResult MapDocument::moveVertices(
   std::vector<vm::vec3> vertexPositions, const vm::vec3& delta) {
   auto newVertexPositions = std::vector<vm::vec3>{};

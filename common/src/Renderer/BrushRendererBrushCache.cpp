@@ -85,7 +85,7 @@ void BrushRendererBrushCache::validateVertexCache(const Model::BrushNode* brushN
 
       const auto& position = vertex->position();
       m_cachedVertices.emplace_back(
-        vm::vec3f(position), vm::vec3f(face.boundary().normal), face.textureCoords(position));
+        vm::vec3f(position), vm::vec3f(face.boundary().normal), face.textureCoords(position), brush.findVertexColor(position));
 
       current = current->previous();
     }

@@ -36,7 +36,7 @@ class BrushFace;
 namespace Renderer {
 class BrushRendererBrushCache {
 public:
-  using VertexSpec = Renderer::GLVertexTypes::P3NT2;
+  using VertexSpec = Renderer::GLVertexTypes::P3NT2C4;
   using Vertex = VertexSpec::Vertex;
 
   struct CachedFace {

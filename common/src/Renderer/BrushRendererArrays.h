@@ -307,7 +307,7 @@ public:
  */
 class BrushVertexArray {
 private:
-  using Vertex = Renderer::GLVertexTypes::P3NT2::Vertex;
+  using Vertex = Renderer::GLVertexTypes::P3NT2C4::Vertex;
 
   VertexHolder<Vertex> m_vertexHolder;
   AllocationTracker m_allocationTracker;
