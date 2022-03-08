@@ -49,6 +49,8 @@ void main() {
 	else
 		gl_FragColor = faceColor;
     
+    gl_FragColor *= vertexColor;
+    
 
     // Assume alpha masked or opaque.
     // TODO: Make this optional if we gain support for translucent textures
@@ -110,5 +112,4 @@ void main() {
 	}
 
     gl_FragColor.rgb = applySoftMapBoundsTint(gl_FragColor.rgb, modelCoordinates.xyz);
-    gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
 }
